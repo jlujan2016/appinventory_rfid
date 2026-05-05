@@ -3,6 +3,7 @@ const path = require('path');
 const sql = require('mssql');
 require("dotenv").config();
 const dotenv = require('dotenv');
+const rfidService = require('./rfidService');
 
 // Determinar el entorno
 const envPath = app.isPackaged 
@@ -143,6 +144,8 @@ function createWindow() {
 app.on('ready', () => {
     connectToDatabase();
     createWindow();
+    // 🔥 AQUÍ VA RFID
+    rfidService.connect();
 });
 
 app.on('window-all-closed', function () {
