@@ -38,7 +38,7 @@ async function connectToDatabase() {
 ipcMain.handle('login', async (event, username, password) => {
     try {
         const request = new sql.Request();
-        const query = `SELECT * FROM Users WHERE username = '${username}' AND password = CONVERT(NVARCHAR(32),HashBytes('MD5', '${password}'),2)`;
+        const query = `SELECT * FROM Users WHERE username = '${username}' AND password_hash = CONVERT(NVARCHAR(32),HashBytes('MD5', '${password}'),2)`;
         const result = await request.query(query);
 
         if (result.recordset.length > 0) {
@@ -49,15 +49,16 @@ ipcMain.handle('login', async (event, username, password) => {
 
             // Abrir la ventana del dashboard
             dashboardWindow = new BrowserWindow({
-                width: 800,
-                height: 600,
+                width: 1000,
+                height: 700,
                 webPreferences: {
+                    preload: path.join(__dirname, 'preload.js'), // 🔥 FALTABA ESTO
                     contextIsolation: true,
                     enableRemoteModule: false,
                 },
             });
 
-            dashboardWindow.loadFile('dashboard.html');
+            dashboardWindow.loadFile('rfid.html');
 
             dashboardWindow.on('closed', () => {
                 dashboardWindow = null;
@@ -69,8 +70,56 @@ ipcMain.handle('login', async (event, username, password) => {
         }
     } catch (err) {
         console.error('Error al ejecutar la consulta:', err);
+        const { dialog } = require('electron');
+        dialog.showErrorBox('Error', err.message);
+        
         return 'Error en el servidor';
+        alert("error");
+        alert(err);
+
     }
+});
+
+
+ipcMain.handle('dashboard-data', async () => {
+    try {
+        const request = new sql.Request();
+
+        const query = `
+            SELECT 
+                CATEGORIA ,
+                COUNT(item ) AS TotalProductos
+            FROM EQUIPOS_GLEF 
+            GROUP BY CATEGORIA
+        `;
+
+        const result = await request.query(query);
+        return result.recordset;
+
+    } catch (err) {
+        console.error(err);
+        return [];
+    }
+});
+
+ipcMain.handle('open-rfid-window', async () => {
+    let rfidWindow = new BrowserWindow({
+        width: 900,
+        height: 600,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            contextIsolation: true,
+            nodeIntegration: false
+        }
+    });
+
+    rfidWindow.loadFile('rfid.html');
+
+    rfidWindow.on('closed', () => {
+        rfidWindow = null;
+    });
+
+    return true;
 });
 
 function createWindow() {

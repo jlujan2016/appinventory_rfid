@@ -4,12 +4,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
+
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    
 </head>
+<script>
+function abrirRFID() {
+    window.electron.openRFID();
+}
+
+console.log(window.electron);
+</script>
 <body>
-    <div class="dashboard-container">
-        <h1>Bienvenido al Dashboard</h1>
-        <p>Has iniciado sesión correctamente.</p>
+
+<div class="dashboard-container">
+    <h1>Bienvenido al Dashboard</h1>
+    <p>Has iniciado sesión correctamente.</p>
+<div style="margin-top:20px;">
+    <button onclick="abrirRFID()">
+        📡 Inventario RFID
+    </button>
+</div>
+    <!-- 📊 TARJETAS -->
+    <div style="display:flex; gap:20px; margin-top:20px;">
+        <div style="background:#fff;padding:15px;border-radius:10px;width:200px;">
+            <h3>Total Productos</h3>
+            <h2 id="total">0</h2>
+        </div>
+
+        <div style="background:#fff;padding:15px;border-radius:10px;width:200px;">
+            <h3>Categorías</h3>
+            <h2 id="categorias">0</h2>
+        </div>
     </div>
+
+    <!-- 📊 GRÁFICO -->
+    <div style="margin-top:30px;">
+        <canvas id="chart"></canvas>
+    </div>
+</div>
+
+<script>
+async function cargarDashboard() {
+    const data = await window.electron.getDashboardData();
+
+    // 🔢 KPIs
+    const total = data.reduce((sum, x) => sum + x.TotalProductos, 0);
+
+    document.getElementById("total").innerText = total;
+    document.getElementById("categorias").innerText = data.length;
+
+    // 📊 GRÁFICO
+    const labels = data.map(x => x.CATEGORIA);
+    const values = data.map(x => x.TotalProductos);
+
+    new Chart(document.getElementById("chart"), {
+        type: "bar",
+        data: {
+            labels,
+            datasets: [{
+                label: "Productos por categoría",
+                data: values,
+                backgroundColor: "#4e73df"
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+}
+
+cargarDashboard();
+</script>
+
 </body>
 </html>
